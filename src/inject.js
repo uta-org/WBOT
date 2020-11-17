@@ -15,30 +15,42 @@ WAPI.waitNewMessages(false, async (data) => {
                 headers: {
                     'Content-Type': 'application/json'
                 }
-            }).then((resp) => resp.json()).then(function (response) {
+            }).then((resp) => {
+                if (!resp.ok) { throw resp }
+
+                var text = resp.text(); // check the value returned by php
+                console.log(text);
+                return text;
+            }).then((resp) => JSON.parse(resp)).then(function (response) {
                 //response received from server
-		window.log("log test 2");
-                if(response == null || response.length == 0) console.error("empty response received from server...");
-		else console.log(response);
-		// window.log(response);
-		WAPI.sendSeen(message.chatId._serialized);
+                if(response == null || response.length == 0) console.error("empty response received from server..."); 
+		        else console.log(response);
+
+		        WAPI.sendSeen(message.chatId._serialized);
+
                 //replying to the user based on response
                 if (response && response.length > 0) {
                     response.forEach(itemResponse => {
                         WAPI.sendMessage2(message.chatId._serialized, itemResponse.text);
                         //sending files if there is any 
-                        if (itemResponse.files && itemResponse.files.length > 0) {
+                        if (itemResponse.files != null && itemResponse.files.length > 0) {
                             itemResponse.files.forEach((itemFile) => {
-                                WAPI.sendImage(itemFile.file, message.chatId._serialized, itemFile.name);
-                            })
+                                switch(itemFile.type) {
+                                    case 'sticker':
+                                        WAPI.sendImageAsSticker(itemFile.file, message.chatId._serialized, null); // metadata, width = 512, height = 512
+                                        break;
+
+                                    default:
+                                        WAPI.sendImage(itemFile.file, message.chatId._serialized, itemFile.name);
+                                        break;
+                                }
+                            });
                         }
                     });
                 }
             }).catch(function (error) {
-		// window.log(`error: ${error}`);
-                // window.error(error);
-		window.log(error);
-		console.error(error);
+        		window.log(error);
+        		console.error(error);
             });
         }
         window.log(`Message from ${message.chatId.user} checking..`);
@@ -52,7 +64,7 @@ WAPI.waitNewMessages(false, async (data) => {
                 window.log("Message received in group and group reply is off. so will not take any actions.");
                 return;
             }
-            var exactMatch = intents.bot.find(obj => obj.exact.find(ex => ex == message.body.toLowerCase()));
+            var exactMatch = intents.bot == null ? null : intents.bot.find(obj => obj.exact.find(ex => ex == message.body.toLowerCase()));
             var response = "";
             if (exactMatch != undefined) {
                 response = await resolveSpintax(exactMatch.response);
