@@ -8,6 +8,7 @@ WAPI.waitNewMessages(false, async (data) => {
         body.user = message.chatId._serialized;
         //body.original = message;
         if (intents.appconfig.webhook) {
+	    window.log(`posting to webhook: ${intents.appconfig.webhook}`);
             fetch(intents.appconfig.webhook, {
                 method: "POST",
                 body: JSON.stringify(body),
@@ -16,8 +17,11 @@ WAPI.waitNewMessages(false, async (data) => {
                 }
             }).then((resp) => resp.json()).then(function (response) {
                 //response received from server
-                console.log(response);
-                WAPI.sendSeen(message.chatId._serialized);
+		window.log("log test 2");
+                if(response == null || response.length == 0) console.error("empty response received from server...");
+		else console.log(response);
+		// window.log(response);
+		WAPI.sendSeen(message.chatId._serialized);
                 //replying to the user based on response
                 if (response && response.length > 0) {
                     response.forEach(itemResponse => {
@@ -31,11 +35,14 @@ WAPI.waitNewMessages(false, async (data) => {
                     });
                 }
             }).catch(function (error) {
-                console.log(error);
+		// window.log(`error: ${error}`);
+                // window.error(error);
+		window.log(error);
+		console.error(error);
             });
         }
         window.log(`Message from ${message.chatId.user} checking..`);
-        if (intents.blocked.indexOf(message.chatId.user) >= 0) {
+        if (intents.blocked != null && intents.blocked.indexOf(message.chatId.user) >= 0) {
             window.log("number is blocked by BOT. no reply");
             return;
         }

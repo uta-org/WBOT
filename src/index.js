@@ -28,7 +28,7 @@ async function Main() {
         if (!isLogin) {
             await getAndShowQR();
         }
-        if (configs.smartreply.suggestions.length > 0) {
+        if (configs.smartreply != null && configs.suggestions != null && configs.smartreply.suggestions.length > 0) {
             await setupSmartReply();
         }
         console.log("WBOT is ready !! Let those message come.");
